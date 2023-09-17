@@ -27,7 +27,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validation = Validator::make($request->all(),[
-            'email' => 'required|email',
+            'email' => 'required|email|exists:users,email',
             'password' => "required"
         ], [
             'email.required' => 'correo es campo requerido',
@@ -41,12 +41,10 @@ class AuthController extends Controller
                     "success" => false,
                     "errors" => $mensajes
                 ]
-            ]);
+            ], 401);
         }
         $validateFields = $validation->validate();
         if (!$token = auth()->attempt($validateFields)) {
-            //TODO: validar usuario existe para identificar si es el usuario o la contrasenia
-            // return response()->json(['error' => 'Unauthorized'], 401);
             return response()->json([
                 "meta" => [
                     "success" => false,
@@ -54,7 +52,7 @@ class AuthController extends Controller
                         "Password incorrect for: ". $validateFields['email']
                     ]
                 ]
-            ]);
+            ], 401);
         }
 
         return $this->respondWithToken($token);
