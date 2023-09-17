@@ -30,4 +30,16 @@ Route::group([
     Route::post('me', [AuthController::class, "me"]);
     // Route::post('me', [CandidatoController::class, "me"]);
     Route::post('lead', [CandidatoController::class, "store"]);
+    Route::get('/lead/{candidato}', [CandidatoController::class, "show"])
+        ->missing(function (Request $request) {
+            return response()->json([
+                "meta" => [
+                    "success" => false,
+                    "errors" => [
+                        "No lead found"
+                    ]
+                ]
+            ], 404);
+        });
+    Route::get('leads', [CandidatoController::class, "index"]);
 });

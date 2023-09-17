@@ -29,7 +29,13 @@ class CandidatoController extends Controller
      */
     public function index()
     {
-        //
+        return response()->json([
+            "meta" => [
+                "success" => true,
+                "errors" => []
+            ],
+            "data" => Candidato::all()
+        ]);
     }
 
     /**
@@ -85,7 +91,13 @@ class CandidatoController extends Controller
      */
     public function show(Candidato $candidato)
     {
-        //
+        return response()->json([
+            "meta" => [
+                "success" => true,
+                "errors" => []
+            ],
+            "data" => $candidato
+        ]);
     }
 
     /**
