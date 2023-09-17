@@ -14,7 +14,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        // \App\Models\User::factory(10)->create();
+        \App\Models\User::factory(10)
+        ->sequence(
+            ['role' => 'manager'],
+            ['role' => 'agent'],
+        )->sequence(
+            ['is_active' => 1],
+            ['is_active' => 0],
+        )->create();
+
+        $this->call([
+            CandidatoSeeder::class
+        ]);
 
         // \App\Models\User::factory()->create([
         //     'name' => 'Test User',

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CandidatoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -14,6 +16,18 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return $request->user();
+// });
+
+Route::group([
+    'middleware' => 'api',
+    // 'prefix' => 'auth'
+], function ($router) {
+    Route::post('auth', [AuthController::class, "login"]);
+    Route::post('logout', [AuthController::class, "logout"]);
+    Route::post('refresh', [AuthController::class, "refresh"]);
+    Route::post('me', [AuthController::class, "me"]);
+    // Route::post('me', [CandidatoController::class, "me"]);
+    Route::post('lead', [CandidatoController::class, "store"]);
 });
