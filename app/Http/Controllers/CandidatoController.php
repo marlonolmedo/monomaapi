@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateCandidatoRequest;
 use App\Http\Resources\CandidatoResource;
 use App\Models\Candidato;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 
 class CandidatoController extends Controller
@@ -30,12 +31,18 @@ class CandidatoController extends Controller
      */
     public function index()
     {
+        $user = auth()->user();
+        if($user->role == 'agent'){
+            $candidatos = Candidato::where("owner",$user->id)->get();
+        } else {
+            $candidatos = Candidato::all();
+        }
         return response()->json([
             "meta" => [
                 "success" => true,
                 "errors" => []
             ],
-            "data" => CandidatoResource::collection(Candidato::all())
+            "data" => CandidatoResource::collection($candidatos)
         ]);
     }
 
@@ -47,9 +54,19 @@ class CandidatoController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->user()->cannot('create', Candidato::class)) {
+            return response()->json([
+                "meta" => [
+                    "success" => false,
+                    "errors" => [
+                        'Solo manager pueden crear Candidatos'
+                    ]
+                ]
+            ], 401);
+        }
         $validation = Validator::make($request->all(), [
             'name' => 'required|string|max:30',
-            // 'source' => "required",
+            'source' => "nullable",
             'owner' => "required|integer|exists:users,id"
         ], [
             'name.required' => 'name es requerido',
@@ -93,6 +110,17 @@ class CandidatoController extends Controller
      */
     public function show(Candidato $candidato)
     {
+        $response = Gate::inspect('view', $candidato);
+        if($response->denied()){
+            return response()->json([
+                "meta" => [
+                    "success" => false,
+                    "errors" => [
+                        'Not found.'
+                    ]
+                ]
+            ],401);
+        }
         return response()->json([
             "meta" => [
                 "success" => true,
@@ -109,10 +137,10 @@ class CandidatoController extends Controller
      * @param  \App\Models\Candidato  $candidato
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdateCandidatoRequest $request, Candidato $candidato)
-    {
-        //
-    }
+    // public function update(UpdateCandidatoRequest $request, Candidato $candidato)
+    // {
+    //     //
+    // }
 
     /**
      * Remove the specified resource from storage.
@@ -120,8 +148,8 @@ class CandidatoController extends Controller
      * @param  \App\Models\Candidato  $candidato
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Candidato $candidato)
-    {
-        //
-    }
+    // public function destroy(Candidato $candidato)
+    // {
+    //     //
+    // }
 }

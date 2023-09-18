@@ -16,7 +16,7 @@ class Candidato extends Model
      */
     protected $fillable = ['name','source','owner','created_by'];
 
-    function user() {
+    public function user() {
         return $this->belongsTo(User::class);
     }
 }

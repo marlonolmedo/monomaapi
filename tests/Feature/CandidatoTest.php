@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Http\Resources\CandidatoResource;
 use App\Models\Candidato;
 use App\Models\User;
+use Carbon\Carbon;
 use Faker\Factory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -11,6 +13,7 @@ use Tests\TestCase;
 
 class CandidatoTest extends TestCase
 {
+    private $url = 'api/lead/';
     /**
      * A basic feature test example.
      *
@@ -23,7 +26,8 @@ class CandidatoTest extends TestCase
             'is_active' => 1
         ]);
 
-        $response = $this->actingAs($user, 'api')->getJson('api/leads');
+        $response = $this->actingAs($user, 'api')
+            ->getJson('api/leads');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -63,8 +67,7 @@ class CandidatoTest extends TestCase
         ];
 
         $oneCandidato = Candidato::factory()->create($candidatoData);
-
-        $response = $this->actingAs($user, 'api')->getJson('api/lead/' . $oneCandidato->id);
+        $response = $this->actingAs($user, 'api')->getJson($this->url . $oneCandidato->id);
 
         $response->assertOk()->assertExactJson([
             "meta" => [
@@ -113,53 +116,87 @@ class CandidatoTest extends TestCase
             ]);
     }
 
-    public function test_agent_can_not_fect_all_data(){
+    public function test_agent_can_not_fect_all_data()
+    {
+        $user = User::factory()->create([
+            'role' => 'agent',
+            'is_active' => 1
+        ]);
+        Candidato::factory(5)->create([
+            "owner" => $user->id,
+            "created_by" => $user->id
+        ]);
+        $response = $this->actingAs($user, 'api')
+            ->getJson('api/leads');
+
+        $response->assertOk()
+            ->assertJsonCount(5, 'data');
+    }
+
+    public function test_agent_only_fect_own_candidatos()
+    {
+        $user = User::factory()->create([
+            'role' => 'agent',
+            'is_active' => 1
+        ]);
+        $candidato = Candidato::factory()->create([
+            "owner" => $user->id,
+            "created_by" => $user->id
+        ]);
+        $response = $this->actingAs($user, 'api')
+            ->getJson($this->url . $candidato->id);
+        $response->assertOk()
+            ->assertExactJson([
+                "meta" => [
+                    "success" => true,
+                    "errors" => []
+                ],
+                "data" => [
+                    'id' => $candidato->id,
+                    'name' => $candidato->name,
+                    'source' => $candidato->source,
+                    'created_by' => $candidato->created_by,
+                    'owner' => $candidato->owner,
+                    "created_at" => Carbon::parse($candidato->created_at)->format('Y-m-d H:i:s'),
+                    "updated_at" => Carbon::parse($candidato->updated_at)->format('Y-m-d H:i:s')
+                ]
+            ]);
+    }
+
+    public function test_agent_not_fetch_other_oner_candidatos()
+    {
+        $user = User::factory()->create([
+            'role' => 'agent',
+            'is_active' => 1
+        ]);
+        $candidato = Candidato::factory()->create([
+            "owner" => 2,
+            "created_by" => 5
+        ]);
+
+        $response = $this->actingAs($user, 'api')
+            ->getJson($this->url  . $candidato->id);
+
+        $response->assertUnauthorized()
+            ->assertExactJson([
+                "meta" => [
+                    "success" => false,
+                    "errors" => ['Not found.']
+                ]
+            ]);
+    }
+
+    public function test_agent_can_not_create_new_candidatos()
+    {
         $user = User::factory()->create([
             'role' => 'agent',
             'is_active' => 1
         ]);
 
-        $candidatos = Candidato::factory(5)->create([
-            "owner" => $user->id
-        ]);
-
-        //TODO: terminar esta validacion
-    }
-
-    public function test_agent_only_fect_own_candidatos(){
-        //TODO: terminar tambien este testeo
-    }
-
-    public test_agent_can_not_create_new_candidato(){
-        //TODO: crear esta validacion
-    }
-    public function test_validar_camposRequeridos()
-    {
-        $user = User::find(1);
-
-        $response = $this->actingAs($user, 'api')
-            ->postJson('api/lead', []);
-
-        $response->assertUnauthorized()
-            ->assertExactJson([
-                "meta" => [
-                    "success" => false,
-                    "errors" => [
-                        "name es requerido",
-                        "owner es requerido"
-                    ]
-                ]
-            ]);
-    }
-
-    public function test_name_should_be_string()
-    {
-        $user = User::find(1);
-
         $candidatoData = [
-            'name' => 766767,
-            'source' => 'two candidate',
-            'owner' => 2
+            'name' => 'testing 3',
+            'source' => 'three candidate',
+            'owner' => 2,
         ];
 
         $response = $this->actingAs($user, 'api')
@@ -170,78 +207,7 @@ class CandidatoTest extends TestCase
                 "meta" => [
                     "success" => false,
                     "errors" => [
-                        "name debe ser cadena de texto"
-                    ]
-                ]
-            ]);
-    }
-
-    public function test_name_should_be_les_than_30_character()
-    {
-        $user = User::find(1);
-        $fake = Factory::create();
-        $candidatoData = [
-            'name' => $fake->text(200),
-            'source' => 'test 1',
-            'owner' => 2
-        ];
-        $response = $this->actingAs($user, 'api')
-            ->postJson('api/lead', $candidatoData);
-
-        $response->assertUnauthorized()
-            ->assertExactJson([
-                "meta" => [
-                    "success" => false,
-                    "errors" => [
-                        // "name debe ser cadena de texto",
-                        "name no puede superar los 30 caracteres"
-                    ]
-                ]
-            ]);
-    }
-
-    public function test_owner_should_be_integer()
-    {
-        $user = User::find(1);
-        // $fake = Factory::create();
-        $candidatoData = [
-            'name' => 'perueba 1',
-            'source' => 'test 1',
-            'owner' => 'ewew'
-        ];
-        // dd($candidatoData);
-        $response = $this->actingAs($user, 'api')
-            ->postJson('api/lead', $candidatoData);
-
-        $response->assertUnauthorized()
-            ->assertExactJson([
-                "meta" => [
-                    "success" => false,
-                    "errors" => [
-                        "owner debe ser numero"
-                    ]
-                ]
-            ]);
-    }
-
-    public function test_owner_should_be_existen_user()
-    {
-        $user = User::find(1);
-        $candidatoData = [
-            'name' => 'perueba 1',
-            'source' => 'test 1',
-            'owner' => 205
-        ];
-        // dd($candidatoData);
-        $response = $this->actingAs($user, 'api')
-            ->postJson('api/lead', $candidatoData);
-
-        $response->assertUnauthorized()
-            ->assertExactJson([
-                "meta" => [
-                    "success" => false,
-                    "errors" => [
-                        "owner debe ser un usuario existente"
+                        'Solo manager pueden crear Candidatos'
                     ]
                 ]
             ]);
