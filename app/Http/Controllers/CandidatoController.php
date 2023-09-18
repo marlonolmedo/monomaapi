@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCandidatoRequest;
 use App\Http\Requests\UpdateCandidatoRequest;
+use App\Http\Resources\CandidatoResource;
 use App\Models\Candidato;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -34,7 +35,7 @@ class CandidatoController extends Controller
                 "success" => true,
                 "errors" => []
             ],
-            "data" => Candidato::all()
+            "data" => CandidatoResource::collection(Candidato::all())
         ]);
     }
 
@@ -47,15 +48,16 @@ class CandidatoController extends Controller
     public function store(Request $request)
     {
         $validation = Validator::make($request->all(), [
-            'name' => 'required|String|max:255',
+            'name' => 'required|string|max:30',
             // 'source' => "required",
             'owner' => "required|integer|exists:users,id"
         ], [
             'name.required' => 'name es requerido',
-            'name.String' => 'name debe ser cadena de texto',
-            'name.max' => 'name no puede superar los 255 caracteres',
+            'name.string' => 'name debe ser cadena de texto',
+            'name.max' => 'name no puede superar los 30 caracteres',
             'owner.required' => 'owner es requerido',
             'owner.integer' => 'owner debe ser numero',
+            'owner.exists' => 'owner debe ser un usuario existente'
         ]);
         if ($validation->fails()) {
             $mensajes = collect($validation->errors()->messages())->flatten(1);
@@ -64,7 +66,7 @@ class CandidatoController extends Controller
                     "success" => false,
                     "errors" => $mensajes
                 ]
-            ]);
+            ], 401);
         }
 
         $validado = $validation->validated();
@@ -79,7 +81,7 @@ class CandidatoController extends Controller
                 "success" => true,
                 "errors" => []
             ],
-            "data" => $candidato
+            "data" => new CandidatoResource($candidato)
         ], 201);
     }
 
@@ -96,7 +98,7 @@ class CandidatoController extends Controller
                 "success" => true,
                 "errors" => []
             ],
-            "data" => $candidato
+            "data" => new CandidatoResource($candidato)
         ]);
     }
 
