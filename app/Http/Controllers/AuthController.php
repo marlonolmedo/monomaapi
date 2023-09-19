@@ -28,7 +28,7 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $validation = Validator::make($request->all(),[
+        $validation = Validator::make($request->all(), [
             'email' => 'required|email|exists:users,email',
             'password' => "required"
         ], [
@@ -36,16 +36,21 @@ class AuthController extends Controller
             'email.email' => 'El campor email debe ser un correo valido',
             'password.required' => 'password es requerida',
         ]);
-        if($validation->fails()){
+        $mensajes = collect([]);
+        if ($validation->fails()) {
             $mensajes = collect($validation->errors()->messages())->flatten(1);
-            return response()->json(Utility::message(false,$mensajes),401);
+        }
+        if ($mensajes->count() == 0 && User::where('email', $request['email'])->first()->is_active == 0) {
+            $mensajes = collect(["usuario desactivado."]);
+        }
+        if ($mensajes->count() > 0) {
+            return response()->json(Utility::message(false, $mensajes), 401);
         }
         $validateFields = $validation->validate();
-        if(User::where('email', $validateFields['email'])->first()->is_active == 0){
-            return response()->json(Utility::message(false,["usuario desactivado."]),401);
-        }
         if (!$token = auth()->attempt($validateFields)) {
-            return response()->json(Utility::message(false,["Password incorrect for: ". $validateFields['email']]),401);
+            return response()->json(Utility::message(false, [
+                "Password incorrect for: " . $validateFields['email']
+            ]), 401);
         }
 
         return $this->respondWithToken($token);
@@ -107,6 +112,6 @@ class AuthController extends Controller
             "token" => $token,
             "minutes_to_expire" => auth()->factory()->getTTL()
         ];
-        return response()->json(Utility::message(true,data: $data));
+        return response()->json(Utility::message(true, data: $data));
     }
 }
