@@ -31,7 +31,7 @@ class CandidatoPolicy
      */
     public function view(User $user, Candidato $candidato)
     {
-        return $user->role == 'agent' ? $user->id == $candidato->owner : true;
+        return $user->role->name == 'agent' ? $user->id == $candidato->owner : true;
     }
 
     /**
@@ -42,7 +42,7 @@ class CandidatoPolicy
      */
     public function create(User $user)
     {
-        return $user->role == 'manager';
+        return $user->role->name == 'manager';
     }
 
     /**

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Http\Resources\CandidatoResource;
 use App\Models\Candidato;
+use App\Models\Role;
 use App\Models\User;
 use Carbon\Carbon;
 use Faker\Factory;
@@ -21,8 +22,9 @@ class CandidatoTest extends TestCase
      */
     public function test_manager_can_fetch_all_data()
     {
+        $role = Role::where('name', 'manager')->first();
         $user = User::factory()->create([
-            'role' => 'manager',
+            'role_id' => $role->id,
             'is_active' => 1
         ]);
 
@@ -51,8 +53,9 @@ class CandidatoTest extends TestCase
 
     public function test_manager_can_get_any_one_lead()
     {
+        $role = Role::where('name', 'manager')->first();
         $user = User::factory()->create([
-            'role' => 'manager',
+            'role_id' => $role->id,
             'is_active' => 1
         ]);
 
@@ -80,8 +83,9 @@ class CandidatoTest extends TestCase
 
     public function test_manager_can_create_new_candidato()
     {
+        $role = Role::where('name', 'manager')->first();
         $user = User::factory()->create([
-            'role' => 'manager',
+            'role_id' => $role->id,
             'is_active' => 1
         ]);
 
@@ -118,8 +122,9 @@ class CandidatoTest extends TestCase
 
     public function test_agent_can_not_fect_all_data()
     {
+        $role = Role::where('name', 'agent')->first();
         $user = User::factory()->create([
-            'role' => 'agent',
+            'role_id' => $role->id,
             'is_active' => 1
         ]);
         Candidato::factory(5)->create([
@@ -135,8 +140,9 @@ class CandidatoTest extends TestCase
 
     public function test_agent_only_fect_own_candidatos()
     {
+        $role = Role::where('name', 'agent')->first();
         $user = User::factory()->create([
-            'role' => 'agent',
+            'role_id' => $role->id,
             'is_active' => 1
         ]);
         $candidato = Candidato::factory()->create([
@@ -165,8 +171,9 @@ class CandidatoTest extends TestCase
 
     public function test_agent_not_fetch_other_oner_candidatos()
     {
+        $role = Role::where('name', 'agent')->first();
         $user = User::factory()->create([
-            'role' => 'agent',
+            'role_id' => $role->id,
             'is_active' => 1
         ]);
         $candidato = Candidato::factory()->create([
@@ -188,8 +195,9 @@ class CandidatoTest extends TestCase
 
     public function test_agent_can_not_create_new_candidatos()
     {
+        $role = Role::where('name', 'agent')->first();
         $user = User::factory()->create([
-            'role' => 'agent',
+            'role_id' => $role->id,
             'is_active' => 1
         ]);
 

@@ -65,7 +65,18 @@ class AuthController extends Controller
      */
     public function me()
     {
-        return response()->json(auth()->user());
+        $usuario = auth()->user();
+        $data = [
+            'id' => $usuario->id,
+            'name' => $usuario->name,
+            'email' => $usuario->email,
+            'email_verified_at' => $usuario->email_verified_at,
+            'is_active' => $usuario->is_active,
+            'created_at' => $usuario->created_at,
+            'updated_at' => $usuario->updated_at,
+            'role_id' => $usuario->role
+        ];
+        return response()->json($data);
     }
 
     /**
@@ -99,11 +110,6 @@ class AuthController extends Controller
      */
     protected function respondWithToken($token)
     {
-        // return response()->json([
-        //     'access_token' => $token,
-        //     'token_type' => 'bearer',
-        //     'expires_in' => auth()->factory()->getTTL() * 60
-        // ]);
         return response()->json([
             "meta" => [
                 "success" => true,

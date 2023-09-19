@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\CandidatoSeeder;
 use Database\Seeders\DatabaseSeeder;
@@ -25,10 +26,11 @@ class UserTest extends TestCase
      */
     public function test_failed_login()
     {
-        // $user  = User::find(1);
+        $roles = Role::all()->map(function ($item) {
+            return ['role_id' => $item->id];
+        })->toArray();
         $user = User::factory()->sequence(
-            ['role' => 'manager'],
-            ['role' => 'agent'],
+            ...$roles
         )->sequence(
             ['is_active' => 1],
             ['is_active' => 0],
@@ -52,9 +54,11 @@ class UserTest extends TestCase
 
     public function test_user_can_login_successfully()
     {
+        $roles = Role::all()->map(function ($item) {
+            return ['role_id' => $item->id];
+        })->toArray();
         $user = User::factory()->sequence(
-            ['role' => 'manager'],
-            ['role' => 'agent'],
+            ...$roles
         )->sequence(
             ['is_active' => 1],
             ['is_active' => 0],
@@ -105,7 +109,7 @@ class UserTest extends TestCase
         $response->assertExactJson([
             "meta" => [
                 "success" => false,
-                "errors" => ["correo es campo requerido","password es requerida"]
+                "errors" => ["correo es campo requerido", "password es requerida"]
             ]
         ]);
     }

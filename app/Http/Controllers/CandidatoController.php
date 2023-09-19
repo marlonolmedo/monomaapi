@@ -36,7 +36,7 @@ class CandidatoController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if ($user->role == 'agent') {
+        if ($user->role->name == 'agent') {
             $candidatos = Cache::get('candidatos', function () {
                 return Candidato::all();
             })->where("owner", $user->id);
