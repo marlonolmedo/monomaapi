@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
+use App\Models\Role;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -14,22 +16,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
+        $this->call(RoleSeeder::class);
+        $roles = Role::all()->map(function($item){
+            return ['role_id' => $item->id];
+        })->toArray();
         \App\Models\User::factory(10)
         ->sequence(
-            ['role' => 'manager'],
-            ['role' => 'agent'],
+            ...$roles
         )->sequence(
             ['is_active' => 1],
             ['is_active' => 0],
         )->create();
-
-        $this->call([
-            CandidatoSeeder::class
-        ]);
-
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        $this->call(CandidatoSeeder::class);
     }
 }
