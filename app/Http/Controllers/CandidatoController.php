@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateCandidatoRequest;
 use App\Http\Resources\CandidatoResource;
 use App\Models\Candidato;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 
@@ -21,6 +22,9 @@ class CandidatoController extends Controller
     public function __construct()
     {
         $this->middleware('auth:api');
+        if (!Cache::has('candidatos')) {
+            Cache::put('Candidatos', Candidato::all());
+        }
     }
 
 
@@ -32,10 +36,14 @@ class CandidatoController extends Controller
     public function index()
     {
         $user = auth()->user();
-        if($user->role == 'agent'){
-            $candidatos = Candidato::where("owner",$user->id)->get();
+        if ($user->role == 'agent') {
+            $candidatos = Cache::get('candidatos', function () {
+                return Candidato::all();
+            })->where("owner", $user->id);
         } else {
-            $candidatos = Candidato::all();
+            $candidatos = Cache::get('candidatos', function () {
+                return Candidato::all();
+            });
         }
         return response()->json([
             "meta" => [
@@ -93,6 +101,8 @@ class CandidatoController extends Controller
         $candidato->fill($validado);
         $candidato->save();
 
+        Cache::put('candidatos', Candidato::all());
+
         return response()->json([
             "meta" => [
                 "success" => true,
@@ -111,7 +121,7 @@ class CandidatoController extends Controller
     public function show(Candidato $candidato)
     {
         $response = Gate::inspect('view', $candidato);
-        if($response->denied()){
+        if ($response->denied()) {
             return response()->json([
                 "meta" => [
                     "success" => false,
@@ -119,7 +129,7 @@ class CandidatoController extends Controller
                         'Not found.'
                     ]
                 ]
-            ],401);
+            ], 401);
         }
         return response()->json([
             "meta" => [
