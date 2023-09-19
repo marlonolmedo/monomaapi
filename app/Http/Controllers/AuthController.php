@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
+use App\Models\User;
+use App\Utilities\Utility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -36,23 +38,14 @@ class AuthController extends Controller
         ]);
         if($validation->fails()){
             $mensajes = collect($validation->errors()->messages())->flatten(1);
-            return response()->json([
-                "meta" => [
-                    "success" => false,
-                    "errors" => $mensajes
-                ]
-            ], 401);
+            return response()->json(Utility::message(false,$mensajes),401);
         }
         $validateFields = $validation->validate();
+        if(User::where('email', $validateFields['email'])->first()->is_active == 0){
+            return response()->json(Utility::message(false,["usuario desactivado."]),401);
+        }
         if (!$token = auth()->attempt($validateFields)) {
-            return response()->json([
-                "meta" => [
-                    "success" => false,
-                    "errors" => [
-                        "Password incorrect for: ". $validateFields['email']
-                    ]
-                ]
-            ], 401);
+            return response()->json(Utility::message(false,["Password incorrect for: ". $validateFields['email']]),401);
         }
 
         return $this->respondWithToken($token);
@@ -110,15 +103,10 @@ class AuthController extends Controller
      */
     protected function respondWithToken($token)
     {
-        return response()->json([
-            "meta" => [
-                "success" => true,
-                "errors" => []
-            ],
-            "data" => [
-                "token" => $token,
-                "minutes_to_expire" => auth()->factory()->getTTL()
-            ]
-        ]);
+        $data = [
+            "token" => $token,
+            "minutes_to_expire" => auth()->factory()->getTTL()
+        ];
+        return response()->json(Utility::message(true,data: $data));
     }
 }

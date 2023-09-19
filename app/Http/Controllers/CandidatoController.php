@@ -6,6 +6,7 @@ use App\Http\Requests\StoreCandidatoRequest;
 use App\Http\Requests\UpdateCandidatoRequest;
 use App\Http\Resources\CandidatoResource;
 use App\Models\Candidato;
+use App\Utilities\Utility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
@@ -45,13 +46,7 @@ class CandidatoController extends Controller
                 return Candidato::all();
             });
         }
-        return response()->json([
-            "meta" => [
-                "success" => true,
-                "errors" => []
-            ],
-            "data" => CandidatoResource::collection($candidatos)
-        ]);
+        return response()->json(Utility::message(true, [], CandidatoResource::collection($candidatos)));
     }
 
     /**
@@ -63,14 +58,9 @@ class CandidatoController extends Controller
     public function store(Request $request)
     {
         if ($request->user()->cannot('create', Candidato::class)) {
-            return response()->json([
-                "meta" => [
-                    "success" => false,
-                    "errors" => [
-                        'Solo manager pueden crear Candidatos'
-                    ]
-                ]
-            ], 401);
+            return response()->json(Utility::message(false, [
+                'Solo manager pueden crear Candidatos'
+            ]), 401);
         }
         $validation = Validator::make($request->all(), [
             'name' => 'required|string|max:30',
@@ -86,12 +76,7 @@ class CandidatoController extends Controller
         ]);
         if ($validation->fails()) {
             $mensajes = collect($validation->errors()->messages())->flatten(1);
-            return response()->json([
-                "meta" => [
-                    "success" => false,
-                    "errors" => $mensajes
-                ]
-            ], 401);
+            return response()->json(Utility::message(false, $mensajes), 401);
         }
 
         $validado = $validation->validated();
@@ -103,13 +88,7 @@ class CandidatoController extends Controller
 
         Cache::put('candidatos', Candidato::all());
 
-        return response()->json([
-            "meta" => [
-                "success" => true,
-                "errors" => []
-            ],
-            "data" => new CandidatoResource($candidato)
-        ], 201);
+        return response()->json(Utility::message(true, [], new CandidatoResource($candidato)), 201);
     }
 
     /**
@@ -122,14 +101,9 @@ class CandidatoController extends Controller
     {
         $response = Gate::inspect('view', $candidato);
         if ($response->denied()) {
-            return response()->json([
-                "meta" => [
-                    "success" => false,
-                    "errors" => [
-                        'Not found.'
-                    ]
-                ]
-            ], 401);
+            return response()->json(Utility::message(false, [
+                'Not found.'
+            ]), 401);
         }
         return response()->json([
             "meta" => [

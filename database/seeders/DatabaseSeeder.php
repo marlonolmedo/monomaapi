@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-
 use App\Models\Role;
 use Illuminate\Database\Seeder;
 
@@ -21,6 +19,10 @@ class DatabaseSeeder extends Seeder
             return ['role_id' => $item->id];
         })->toArray();
         \App\Models\User::factory(10)
+        ->sequence(
+            ...$roles
+        )->create();
+        \App\Models\User::factory(5)
         ->sequence(
             ...$roles
         )->sequence(

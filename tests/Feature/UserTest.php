@@ -14,10 +14,10 @@ class UserTest extends TestCase
 {
     use RefreshDatabase;
     protected $seeder = DatabaseSeeder::class;
+    private $baseUrl = 'api/auth';
     public function test_seeder_all_data()
     {
-        // $this->seed();
-        $this->assertDatabaseCount('users', 10);
+        $this->assertDatabaseCount('users', 15); //se agregaron 5 mas desactivados
     }
     /**
      * A basic feature test example.
@@ -31,11 +31,8 @@ class UserTest extends TestCase
         })->toArray();
         $user = User::factory()->sequence(
             ...$roles
-        )->sequence(
-            ['is_active' => 1],
-            ['is_active' => 0],
         )->create();
-        $response = $this->postJson('api/auth', [
+        $response = $this->postJson($this->baseUrl, [
             "email" => $user->email,
             "password" => "sdjhhwdbhs"
         ]);
@@ -59,12 +56,9 @@ class UserTest extends TestCase
         })->toArray();
         $user = User::factory()->sequence(
             ...$roles
-        )->sequence(
-            ['is_active' => 1],
-            ['is_active' => 0],
         )->create();
 
-        $response = $this->postJson('api/auth', [
+        $response = $this->postJson($this->baseUrl, [
             "email" => $user->email,
             "password" => "password"
         ]);
@@ -84,7 +78,7 @@ class UserTest extends TestCase
 
     public function test_login_validation_email_format()
     {
-        $response = $this->postJson("api/auth", [
+        $response = $this->postJson($this->baseUrl, [
             "email" => "sdjhzyxcghuw",
             "password" => "sdjhhwdbhs"
         ]);
@@ -100,7 +94,7 @@ class UserTest extends TestCase
 
     public function test_login_validation_required_email_and_password()
     {
-        $response = $this->post("api/auth", [
+        $response = $this->post($this->baseUrl, [
             "email" => "",
             "password" => ""
         ]);
@@ -112,5 +106,32 @@ class UserTest extends TestCase
                 "errors" => ["correo es campo requerido", "password es requerida"]
             ]
         ]);
+    }
+
+    public function test_not_login_user_inactivated()
+    {
+        $roles = Role::all()->map(function ($item) {
+            return ['role_id' => $item->id];
+        })->toArray();
+        $user = User::factory()->sequence(
+            ...$roles
+        )->create([
+            "is_active" => 0
+        ]);
+
+        $response = $this->postJson($this->baseUrl, [
+            "email" => $user->email,
+            "password" => "password"
+        ]);
+
+        $response->assertUnauthorized()
+            ->assertExactJson([
+                "meta" => [
+                    "success" => false,
+                    "errors" => [
+                        "usuario desactivado."
+                    ]
+                ]
+            ]);
     }
 }
